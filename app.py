@@ -1,8 +1,8 @@
 from pathlib import Path
 import joblib
-import pandas as pd
+from pathlib import Path
+import joblib
 import streamlit as st
-
 # Configuración de la página
 st.set_page_config(
     page_title="Predictor de Precios de Vinos de España",
@@ -17,18 +17,30 @@ st.write("Esta aplicación utiliza un modelo de Machine Learning (Random Forest)
 #project_root = Path(r"C:\F5Proyectos\Proyecto_Regresion_Vinos_Espana_Tania")
 #ruta_modelo = project_root / "models" / "modelo_final_vinos.pkl"
 # ✅ AHORA (Ruta relativa automática: toma la carpeta actual del proyecto sin importar dónde esté alojado)
-project_root = Path(__file__).resolve().parent
-ruta_modelo = project_root / "models" / "modelo_final_vinos.pkl"
 
 # 2. Función para cargar el modelo de manera segura y cacheada
-@st.cache_resource
-def cargar_modelo():
-    if ruta_modelo.exists():
-        return joblib.load(ruta_modelo)
-    else:
-        return None
+#@st.cache_resource
+#def cargar_modelo():
+#    if ruta_modelo.exists():
+#        return joblib.load(ruta_modelo)
+#    else:
+#        return None
 
-modelo = cargar_modelo()
+#modelo = cargar_modelo()
+# lo nuevo 
+# 1. Configurar la ruta raíz del proyecto de manera dinámica
+BASE_DIR = Path(__file__).resolve().parent
+
+# 2. Construir la ruta relativa hacia el modelo dentro de la carpeta 'models'
+ruta_modelo = BASE_DIR / "models" / "modelo_final_vinos.pkl"
+
+# 3. Cargar el modelo utilizando caché para optimizar el rendimiento en Streamlit
+@st.cache_resource
+def cargar_modelo(path):
+    return joblib.load(path)
+
+# Cargar el modelo en la aplicación
+modelo = cargar_modelo(ruta_modelo)
 
 if modelo is None:
     st.error(f"❌ No se encontró el archivo del modelo en la ruta: {ruta_modelo}")
