@@ -1,6 +1,8 @@
 from pathlib import Path
 import joblib
 import streamlit as st
+import pandas as pd
+
 # Configuración de la página
 st.set_page_config(
     page_title="Predictor de Precios de Vinos de España",
@@ -11,53 +13,38 @@ st.set_page_config(
 st.title("🍷 Predictor de Precios de Vinos de España")
 st.write("Esta aplicación utiliza un modelo de Machine Learning (Random Forest) entrenado para predecir el precio de los vinos españoles en función de sus características.")
 
-# 1. Definir la ruta raíz absoluta de tu proyecto en Windows
-#project_root = Path(r"C:\F5Proyectos\Proyecto_Regresion_Vinos_Espana_Tania")
-#ruta_modelo = project_root / "models" / "modelo_final_vinos.pkl"
-# ✅ AHORA (Ruta relativa automática: toma la carpeta actual del proyecto sin importar dónde esté alojado)
-
-# 2. Función para cargar el modelo de manera segura y cacheada
-#@st.cache_resource
-#def cargar_modelo():
-#    if ruta_modelo.exists():
-#        return joblib.load(ruta_modelo)
-#    else:
-#        return None
-
-#modelo = cargar_modelo()
-# lo nuevo 
+# Función robusta para cargar el modelo y retornar tanto el objeto como la ruta (para depurar si falla)
 @st.cache_resource
-def cargar_modelo():
-    # 1. Obtener la carpeta donde vive app.py
+def cargar_y_obtener_ruta():
     base_dir = Path(__file__).resolve().parent
     
-    # 2. Buscar primero en la ruta estándar 'models'
-    ruta_modelo = base_dir / "models" / "modelo_final_vinos.pkl"
+    # Rutas posibles a evaluar en orden de prioridad
+    candidatos = [
+        base_dir / "models" / "modelo_final_vinos.pkl",
+        base_dir / "Models" / "modelo_final_vinos.pkl",
+        base_dir / "modelo_final_vinos.pkl"
+    ]
     
-    # 3. Si por mayúsculas en GitHub no la encuentra, buscar alternativas automáticamente
-    if not ruta_modelo.exists():
-        # Intenta buscar en mayúscula por si acaso
-        ruta_modelo_alt = base_dir / "Models" / "modelo_final_vinos.pkl"
-        if ruta_modelo_alt.exists():
-            ruta_modelo = ruta_modelo_alt
-        else:
-            # Si no está en ninguna, busca en la raíz del proyecto
-            ruta_modelo = base_dir / "modelo_final_vinos.pkl"
+    for ruta in candidatos:
+        if ruta.exists():
+            return joblib.load(ruta), ruta
             
-    return joblib.load(ruta_modelo)
+    # Si ninguna existe, devolvemos None y la ruta estándar para mostrar el error
+    return None, candidatos[0]
 
 # Cargar el modelo
-modelo = cargar_modelo()
+modelo, ruta_intentada = cargar_y_obtener_ruta()
 
 if modelo is None:
-    st.error(f"❌ No se encontró el archivo del modelo en la ruta: {ruta_modelo}")
+    st.error(f"❌ No se encontró el archivo del modelo. Se buscó en: {ruta_intentada}")
+    st.info("💡 Asegúrate de que la carpeta 'models' y el archivo 'modelo_final_vinos.pkl' estén subidos a GitHub.")
     st.stop()
 else:
     st.success("¡Modelo cargado correctamente!")
 
 st.markdown("---")
 
-# 3. Formulario de entradas para el usuario (Ajusta los nombres según las columnas con las que entrenaste tu modelo)
+# Formulario de entradas para el usuario
 st.subheader("📝 Introduce las características del vino:")
 
 col1, col2 = st.columns(2)
@@ -70,10 +57,8 @@ with col2:
     sulfatos = st.number_input("Sulfatos", min_value=0.2, max_value=2.0, value=0.6, step=0.05)
     pH = st.slider("Nivel de pH", min_value=2.5, max_value=4.5, value=3.4, step=0.01)
 
-# 4. Botón para realizar la predicción
+# Botón para realizar la predicción
 if st.button("🚀 Calcular Precio Estimado", type="primary"):
-    # Creamos un DataFrame con los datos introducidos (asegúrate de que los nombres de las columnas coincidan con X_train)
-    # Nota: Si tu modelo usa más columnas, añádelas aquí en el diccionario
     datos_entrada = pd.DataFrame({
         'alcohol': [alcohol],
         'volatile_acidity': [acidez_volatil],
@@ -82,10 +67,7 @@ if st.button("🚀 Calcular Precio Estimado", type="primary"):
     })
     
     try:
-        # Realizar la predicción
         prediccion = modelo.predict(datos_entrada)[0]
-        
-        # Mostrar el resultado de forma atractiva
         st.markdown("### 📊 Resultado de la Predicción:")
         st.metric(label="Precio Estimado del Vino", value=f"{prediccion:.2f} €")
         
