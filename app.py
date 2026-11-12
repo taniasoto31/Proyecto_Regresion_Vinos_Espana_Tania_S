@@ -14,7 +14,10 @@ st.title("🍷 Predictor de Precios de Vinos de España")
 st.write("Esta aplicación utiliza un modelo de Machine Learning (Random Forest) entrenado para predecir el precio de los vinos españoles en función de sus características.")
 
 # 1. Definir la ruta raíz absoluta de tu proyecto en Windows
-project_root = Path(r"C:\F5Proyectos\Proyecto_Regresion_Vinos_Espana_Tania")
+#project_root = Path(r"C:\F5Proyectos\Proyecto_Regresion_Vinos_Espana_Tania")
+#ruta_modelo = project_root / "models" / "modelo_final_vinos.pkl"
+# ✅ AHORA (Ruta relativa automática: toma la carpeta actual del proyecto sin importar dónde esté alojado)
+project_root = Path(__file__).resolve().parent
 ruta_modelo = project_root / "models" / "modelo_final_vinos.pkl"
 
 # 2. Función para cargar el modelo de manera segura y cacheada
