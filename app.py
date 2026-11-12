@@ -1,7 +1,5 @@
 from pathlib import Path
 import joblib
-from pathlib import Path
-import joblib
 import streamlit as st
 # Configuración de la página
 st.set_page_config(
@@ -28,19 +26,28 @@ st.write("Esta aplicación utiliza un modelo de Machine Learning (Random Forest)
 
 #modelo = cargar_modelo()
 # lo nuevo 
-# 1. Configurar la ruta raíz del proyecto de manera dinámica
-BASE_DIR = Path(__file__).resolve().parent
-
-# 2. Construir la ruta relativa hacia el modelo dentro de la carpeta 'models'
-ruta_modelo = BASE_DIR / "models" / "modelo_final_vinos.pkl"
-
-# 3. Cargar el modelo utilizando caché para optimizar el rendimiento en Streamlit
 @st.cache_resource
-def cargar_modelo(path):
-    return joblib.load(path)
+def cargar_modelo():
+    # 1. Obtener la carpeta donde vive app.py
+    base_dir = Path(__file__).resolve().parent
+    
+    # 2. Buscar primero en la ruta estándar 'models'
+    ruta_modelo = base_dir / "models" / "modelo_final_vinos.pkl"
+    
+    # 3. Si por mayúsculas en GitHub no la encuentra, buscar alternativas automáticamente
+    if not ruta_modelo.exists():
+        # Intenta buscar en mayúscula por si acaso
+        ruta_modelo_alt = base_dir / "Models" / "modelo_final_vinos.pkl"
+        if ruta_modelo_alt.exists():
+            ruta_modelo = ruta_modelo_alt
+        else:
+            # Si no está en ninguna, busca en la raíz del proyecto
+            ruta_modelo = base_dir / "modelo_final_vinos.pkl"
+            
+    return joblib.load(ruta_modelo)
 
-# Cargar el modelo en la aplicación
-modelo = cargar_modelo(ruta_modelo)
+# Cargar el modelo
+modelo = cargar_modelo()
 
 if modelo is None:
     st.error(f"❌ No se encontró el archivo del modelo en la ruta: {ruta_modelo}")
